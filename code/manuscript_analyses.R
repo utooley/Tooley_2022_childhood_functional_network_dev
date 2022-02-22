@@ -41,7 +41,7 @@ output_directory="~/Documents/projects/in_progress/within_between_network_conn_C
 #Set RGL defaults, larger window and how to make snapshots!
 rgloptions=list("windowRect"=c(50,50,1000,1000));
 
-# Main analyses -----------------------------------------------------------
+# Main analyses: Fig 1 -----------------------------------------------------------
 pipeline='gsr_spkreg_fd0.5dvars1.75_drpvls'
 network_dir=paste0("~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/",pipeline)
 load(paste0(network_dir,"/CBPD_n92_schaefer400_allruns.Rdata"))
@@ -78,7 +78,29 @@ for (outcome in outcomes){
   beta <- paste0("beta_",model)
   assign(beta, lm.beta(get(model)))
 }
+# Main analyses: Fig 2 -----------------------------------------------------------
+#System-specific effects
+networks_age_pvals_fdr #FDR-corrected
+outcomes <- main_unique %>% ungroup() %>% dplyr::select(matches("sys.to.")) %>% names()
+for (outcome in outcomes){
+  model<-paste0("lm_",outcome)
+  formula<-formula(paste0(outcome, '~age_scan+male+fd_mean_avg+avgweight+totalSizet'))
+  assign(model, lm(formula, data=main_unique))
+  output <- paste0("summary_",model)
+  assign(output, apa_print(Anova(get(model)),es="pes", mse=FALSE))
+  eta <- paste0("eta_",model)
+  assign(eta, eta_squared(Anova(get(model)), ci=0.95))
+  cohensf <- paste0("cohensf_",model)
+  assign(cohensf, cohens_f(Anova(get(model)), ci=0.95))
+  beta <- paste0("beta_", model)
+  assign(beta, lm.beta(get(model)))
+}
+summary(lm_sys1to3);visreg(lm_sys1to3,"age_scan");lm.beta(lm_sys1to3)
+summary(lm_sys3to7);visreg(lm_sys3to7,"age_scan");lm.beta(lm_sys3to7)
+summary(lm_sys4to7);visreg(lm_sys4to7,"age_scan");lm.beta(lm_sys4to7)
+summary(lm_sys3to4);visreg(lm_sys3to4,"age_scan");lm.beta(lm_sys3to4)
 
+# Main analyses: Fig 3 -----------------------------------------------------------
 ## Edge-level analyses
 load("~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/gsr_spkreg_fd0.5dvars1.75_drpvls/edgewise_age_effects_all_cov_n92.Rdata")
 edge_age_pvals_mat <- matrix(nrow = 400, ncol=400)
@@ -152,30 +174,7 @@ summary(lm(get(nodes[2])~age_scan+male+fd_mean_avg+avgweight+totalSizet, data=n9
 visreg(lm(get(nodes[2])~age_scan+male+fd_mean_avg+avgweight+totalSizet, data=n92_nodal_strength_data))
 lm.beta(lm(get(nodes[2])~age_scan+male+fd_mean_avg+avgweight+totalSizet, data=n92_nodal_strength_data))
 
-#Figure 2
-#System-specific effects
-networks_age_pvals_fdr #FDR-corrected
-outcomes <- main_unique %>% ungroup() %>% dplyr::select(matches("sys.to.")) %>% names()
-for (outcome in outcomes){
-  model<-paste0("lm_",outcome)
-  formula<-formula(paste0(outcome, '~age_scan+male+fd_mean_avg+avgweight+totalSizet'))
-  assign(model, lm(formula, data=main_unique))
-  output <- paste0("summary_",model)
-  assign(output, apa_print(Anova(get(model)),es="pes", mse=FALSE))
-  eta <- paste0("eta_",model)
-  assign(eta, eta_squared(Anova(get(model)), ci=0.95))
-  cohensf <- paste0("cohensf_",model)
-  assign(cohensf, cohens_f(Anova(get(model)), ci=0.95))
-  beta <- paste0("beta_", model)
-  assign(beta, lm.beta(get(model)))
-}
-summary(lm_sys1to3);visreg(lm_sys1to3,"age_scan");lm.beta(lm_sys1to3)
-summary(lm_sys3to7);visreg(lm_sys3to7,"age_scan");lm.beta(lm_sys3to7)
-summary(lm_sys4to7);visreg(lm_sys4to7,"age_scan");lm.beta(lm_sys4to7)
-summary(lm_sys3to4);visreg(lm_sys3to4,"age_scan");lm.beta(lm_sys3to4)
-
 ## Cosine similarity analysis
-
 #read in average matrix
 average_FC_mat <- as.matrix(read.csv("~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/gsr_spkreg_fd0.5dvars1.75_drpvls/n92_average_zscored_FC_matrix.csv"))
 #load back in edge age effects
@@ -221,8 +220,8 @@ plt <- ggplot() + theme_classic()+
 print(plt)
 print(t.test(sig_parcel_cosine,null_parcel_cosine))
 
-# Main: Reasoning analyses ------------------------------------------------
-#Figure 3
+# Main analyses: Fig 4 Reasoning analyses ------------------------------------------------
+#Figure 4
 main_unique$matrix_reasoning_both <- ifelse(is.na(main_unique$wppsi_matrix_valid),main_unique$wisc_matrix_scaled,ifelse(main_unique$wppsi_matrix_valid==0,NA,main_unique$wppsi_matrix_scaled))
 main_unique$matrix_reasoning_both_raw <- ifelse(is.na(main_unique$wppsi_matrix_valid),main_unique$wisc_matrix_raw,ifelse(main_unique$wppsi_matrix_valid==0,NA,main_unique$wppsi_matrix_raw))
 main_unique$matrix_reasoning_both;main_unique$matrix_reasoning_both_raw
@@ -230,14 +229,14 @@ main_unique$matrix_reasoning_both;main_unique$matrix_reasoning_both_raw
 ## Whole-brain positive and negative to reasoning
 n92_all_edges<- readRDS("~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/gsr_spkreg_fd0.5dvars1.75_drpvls/n92_all_edges.RData");n92_all_edges <- n92_all_edges[,-1]
 
-# edgewise_mr_pvals<- mclapply(1:79800, function(x) { summary(lm(n92_all_edges[,x]~main_unique$matrix_reasoning_both+main_unique$age_scan+main_unique$male+main_unique$fd_mean_avg+main_unique$avgweight+main_unique$totalSizet))$coef[2,4]}, mc.cores = 4)
-# edgewise_mr_pvals <- unlist(edgewise_mr_pvals)
-# edgewise_mr_pvals_fdr <- cbind(edgewise_mr_pvals,p.adjust(edgewise_mr_pvals,method = "fdr"))
-# #get mr betas
-# edgewise_mr_betas<- mclapply(1:79800, function(x) { lm.beta(lm(n92_all_edges[,x]~main_unique$matrix_reasoning_both+main_unique$age_scan+main_unique$male+main_unique$fd_mean_avg+main_unique$avgweight+main_unique$totalSizet))$standardized.coefficients[[2]]}, mc.cores = 4)
-# edgewise_mr_betas <- unlist(edgewise_mr_betas)
-# #save for reloading in future
-# save(edgewise_mr_pvals_fdr, edgewise_mr_betas,file= "~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/gsr_spkreg_fd0.5dvars1.75_drpvls/edgewise_mr_effects_all_cov_n92.Rdata")
+edgewise_mr_pvals<- mclapply(1:79800, function(x) { summary(lm(n92_all_edges[,x]~main_unique$matrix_reasoning_both+main_unique$age_scan+main_unique$male+main_unique$fd_mean_avg+main_unique$avgweight+main_unique$totalSizet))$coef[2,4]}, mc.cores = 4)
+edgewise_mr_pvals <- unlist(edgewise_mr_pvals)
+edgewise_mr_pvals_fdr <- cbind(edgewise_mr_pvals,p.adjust(edgewise_mr_pvals,method = "fdr"))
+#get mr betas
+edgewise_mr_betas<- mclapply(1:79800, function(x) { lm.beta(lm(n92_all_edges[,x]~main_unique$matrix_reasoning_both+main_unique$age_scan+main_unique$male+main_unique$fd_mean_avg+main_unique$avgweight+main_unique$totalSizet))$standardized.coefficients[[2]]}, mc.cores = 4)
+edgewise_mr_betas <- unlist(edgewise_mr_betas)
+#save for reloading in future
+save(edgewise_mr_pvals_fdr, edgewise_mr_betas,file= "~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/gsr_spkreg_fd0.5dvars1.75_drpvls/edgewise_mr_effects_all_cov_n92.Rdata")
 
 #load back in edge MR effects
 load("~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/gsr_spkreg_fd0.5dvars1.75_drpvls/edgewise_mr_effects_all_cov_n92.Rdata")
@@ -294,7 +293,7 @@ for (i in 1:400){
   values[as.numeric(as.character(l$indices[i]))] <- l$Freq[i]#replace the indices in values with the num of sig edges from that parcel in the table
 }
 values <- values/2 #because we indexed twice
-num_edges <- data.frame(factor(communities, ),values);colnames(num_edges) <- c("community","data"); 
+num_edges <- data.frame(factor(communities),values);colnames(num_edges) <- c("community","data"); 
 longdata = num_edges %>% dplyr::group_by(community) %>% mutate(med = median(data))
 
 g <- ggplot(data = longdata, aes(y = data, x = community, fill=community)) +
@@ -378,21 +377,9 @@ eta_lm_reasoning_sys6to6 <- eta_squared(Anova(lm_reasoning_sys6to6), ci=0.95);co
 summary_lm_reasoning_sys6to6
 summary(lm_reasoning_sys6to6)
 
-## Play
-lm_sys3to7<- lm(litnum_freq_play_avg~age_scan+male+fd_mean_avg+avgweight+totalSizet+sys3to7, data=main_unique)
-lm_sys4to7<- lm(sys4to7~age_scan+male+fd_mean_avg+avgweight+totalSizet+litnum_freq_play_avg, data=main_unique)
-summary(lm(litnum_freq_play_avg~age_behav.x+male+ses_composite, data=main_unique));visreg(lm(litnum_freq_play_avg~age_behav.x+male+ses_composite, data=main_unique))
-summary(lm_sys3to7);lm.beta(lm_sys3to7) #Not significant
-summary(lm_sys4to7)
-visreg(lm_sys3to7, "sys3to7", main="Frequency of play",ylab="", xlab="DMN to DAN")
-visreg(lm_sys4to7, "litnum_freq_play_avg", main="DMN to VAN",ylab="", xlab="litnum_freq_play_avg")
-
-# Replication in alternate parcellation --------
+# Supplementary Fig: Replication in alternate parcellation --------
 pipeline='gsr_spkreg_fd0.5dvars1.75_drpvls'
 network_dir=paste0("~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/",pipeline)
-
-#trace and edit this function to remove MSE
-trace(papaja:::apa_print.anova, edit=TRUE)
 
 load(paste0(network_dir,"/CBPD_n92_schaefer400_allruns.Rdata"))
 #Use main_replicate_unique instead
@@ -561,13 +548,14 @@ rglactions=list("snapshot_png"=paste0(output_image_directory,name,".png"), 'shif
 vis.region.values.on.subject(subjects_dir, 'fsaverage6', 'Schaefer2018_400Parcels_7Networks_order',  lh, 
                              rh, makecmap_options = makecmap_options, "inflated", views="t9", draw_colorbar = T, rgloptions = rgloptions, rglactions = rglactions)
 ## Reasoning
-#Test all 3 systems with Reasoning
+#Test all 4 systems with Reasoning
 main_replicate_unique$matrix_reasoning_both <- ifelse(is.na(main_replicate_unique$wppsi_matrix_valid),main_replicate_unique$wisc_matrix_scaled,ifelse(main_replicate_unique$wppsi_matrix_valid==0,NA,main_replicate_unique$wppsi_matrix_scaled))
 main_replicate_unique$matrix_reasoning_both_raw <- ifelse(is.na(main_replicate_unique$wppsi_matrix_valid),main_replicate_unique$wisc_matrix_raw,ifelse(main_replicate_unique$wppsi_matrix_valid==0,NA,main_replicate_unique$wppsi_matrix_raw))
 main_replicate_unique$matrix_reasoning_both;main_replicate_unique$matrix_reasoning_both_raw
 lm_replicate_schaefer_reasoning_sys1to3<- lm(matrix_reasoning_both~age_scan+male+fd_mean_avg+avgweight+totalSizet+sys1to3, data=main_replicate_unique)
 lm_replicate_schaefer_reasoning_sys3to7<- lm(matrix_reasoning_both~age_scan+male+fd_mean_avg+avgweight+totalSizet+sys3to7, data=main_replicate_unique)
 lm_replicate_schaefer_reasoning_sys4to7<- lm(matrix_reasoning_both~age_scan+male+fd_mean_avg+avgweight+totalSizet+sys4to7, data=main_replicate_unique)
+lm_replicate_schaefer_reasoning_sys3to4<- lm(matrix_reasoning_both~age_scan+male+fd_mean_avg+avgweight+totalSizet+sys3to4, data=main_replicate_unique)
 summary_lm_replicate_schaefer_reasoning_sys1to3 <- apa_print(Anova(lm_replicate_schaefer_reasoning_sys1to3),es="pes",mse=F);beta_lm_replicate_schaefer_reasoning_sys1to3 <- lm.beta(lm_replicate_schaefer_reasoning_sys1to3)
 eta_lm_replicate_schaefer_reasoning_sys1to3 <- eta_squared(Anova(lm_replicate_schaefer_reasoning_sys1to3), ci=0.95);cohensf_lm_replicate_schaefer_reasoning_sys1to3 <- cohens_f(Anova(lm_replicate_schaefer_reasoning_sys1to3), ci=0.95)
 summary_lm_replicate_schaefer_reasoning_sys3to7 <- apa_print(Anova(lm_replicate_schaefer_reasoning_sys3to7),es="pes",mse=F);beta_lm_replicate_schaefer_reasoning_sys3to7 <- lm.beta(lm_replicate_schaefer_reasoning_sys3to7)
@@ -579,23 +567,76 @@ visreg(lm_replicate_schaefer_reasoning_sys1to3, "sys1to3", main= "Matrix Reasoni
 visreg(lm_replicate_schaefer_reasoning_sys3to7, "sys3to7", main= "Matrix Reasoning (scaled score)", ylab="Scaled score", xlab="DM to DA connectivity")
 visreg(lm_replicate_schaefer_reasoning_sys4to7)
 
-## Play
-lm_replicate_schaefer_play_sys3to7<- lm(litnum_freq_play_avg~age_scan+male+fd_mean_avg+avgweight+totalSizet+sys3to7, data=main_replicate_unique)
-lm_replicate_schaefer_play_sys4to7<- lm(litnum_freq_play_avg~age_scan+male+fd_mean_avg+avgweight+totalSizet+sys4to7, data=main_replicate_unique)
-summary(lm(litnum_freq_play_avg~age_behav.x+male+ses_composite, data=main_replicate_unique))
-#visreg(lm(litnum_freq_play_avg~age_behav.x+male+ses_composite, data=main_replicate_unique))
-summary(lm_replicate_schaefer_play_sys3to7);lm.beta(lm_replicate_schaefer_play_sys3to7) #Not significant
-summary_lm_replicate_schaefer_reasoning_sys4to7 <- apa_print(Anova(lm_replicate_schaefer_play_sys3to7),es="pes",mse=F);beta_lm_replicate_schaefer_play_sys3to7 <- lm.beta(lm_replicate_schaefer_play_sys3to7)
-eta_lm_replicate_schaefer_play_sys3to7 <- eta_squared(Anova(lm_replicate_schaefer_play_sys3to7), ci=0.95);cohensf_lm_replicate_schaefer_play_sys3to7 <- cohens_f(Anova(lm_replicate_schaefer_play_sys3to7), ci=0.95)
-summary(lm_replicate_schaefer_play_sys4to7)
-visreg(lm_replicate_schaefer_play_sys3to7, "sys3to7", main="Frequency of play",ylab="", xlab="DMN to DAN")
-visreg(lm_replicate_schaefer_play_sys4to7, "litnum_freq_play_avg", main="DMN to VAN",ylab="", xlab="litnum_freq_play_avg")
-
 save(list=c("main_replicate_unique", "networks_age_pvals_fdr_replicate", ls(pattern = "summary_lm_replicate_*"), 
             ls(pattern = "eta_lm_replicate_schaefer_*"), ls(pattern = "cohensf_lm_replicate_schaefer_*"), ls(pattern = "beta_lm_replicate_schaefer_*")),
      file = paste0(output_directory,"replicate_schaefer_data.Rdata"))
 
-# Replication in pipeline without GSR --------
+#Supplementary Figure: Multiple significance thresholds --------
+pvalues=c(0.01,0.001,0.0001)
+#Use different pval thresholds and plot parcels that have age-sig edges at that threshold
+pos_edges <- edge_age_pvals_mat;pos_edges[edge_age_betas_mat<0] <- NA
+neg_edges <- edge_age_pvals_mat;neg_edges[edge_age_betas_mat>0] <- NA
+for (pvalue in pvalues){
+  indices <- which(edge_age_pvals_mat<pvalue, arr.ind = T) #indices of edges that have age effects  below a pval
+  l <- data.frame(table(indices)) #for each parcel, how many age-significant edges does it have at a given pval thresh
+  values <- vector(mode = "double", 400)
+  for (i in 1:400){
+    values[as.numeric(as.character(l$indices[i]))] <- l$Freq[i]#replace the indices in values with the num of sig edges from that parcel in the table
+  }
+  print(max(values))
+  values <- values/2 #because we indexed the full matrix, there are duplicates for each edge
+  #values <- ifelse(values>num_edges,1,0)
+  #which(values>num_edges)
+  num_of_sig_age_edges_lh=as.list(setNames(c(0, values[1:200]), schaefer_atlas_region_names_lh))
+  num_of_sig_age_edges_rh=as.list(setNames(c(0, values[201:400]), schaefer_atlas_region_names_rh))
+  #colormap
+  colFn_diverging = colorRampPalette(c("white","#7502E3"));makecmap_options=list('colFn'=colFn_diverging) 
+  rglactions=list("snapshot_png"=paste0(output_image_directory,"age_pvals_", pvalue,"regions.png")) #purple="#7502E3", red=#E0011C, blue=#3602D9
+  vis.region.values.on.subject(subjects_dir, 'fsaverage6', 'Schaefer2018_400Parcels_7Networks_order',  num_of_sig_age_edges_lh, 
+                               num_of_sig_age_edges_rh, makecmap_options = makecmap_options, "inflated", views="t4", draw_colorbar = T, rgloptions = rgloptions, rglactions = rglactions)
+}
+
+#Supplementary Figure: Non-linear effects --------
+#Read back in the matrix of edges, so you don't create every time.
+n92_all_edges<- readRDS("~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/gsr_spkreg_fd0.5dvars1.75_drpvls/n92_all_edges.Rdata");n92_all_edges <- n92_all_edges[,-1]
+#read back in subject data
+pipeline='gsr_spkreg_fd0.5dvars1.75_drpvls'
+network_dir=paste0("~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/",pipeline)
+load(paste0(network_dir,"/CBPD_n92_schaefer400_allruns.Rdata"))
+
+#multi-core apply the exactRLRT test for non-linear model across the matrix of edges, get age non-lin pvals 
+edgewise_age_nonlin_pvals<- mclapply(1:79800, function(x) {exactRLRT(gamm(n92_all_edges[,x]~s(main_unique$age_scan)+main_unique$male+main_unique$fd_mean_avg+main_unique$avgweight+main_unique$totalSizet, method = "REML")$lme)$p.value}, mc.cores = 4)
+edgewise_age_nonlin_pvals <- unlist(edgewise_age_nonlin_pvals)
+#save for reloading in future
+save(edgewise_age_nonlin_pvals,file= "~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/gsr_spkreg_fd0.5dvars1.75_drpvls/edgewise_age_nonlin_pvals_n92.Rdata")
+
+#load back in edge age effects
+load("~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/gsr_spkreg_fd0.5dvars1.75_drpvls/edgewise_age_nonlin_pvals_n92.Rdata")
+
+#code to read back into a 400 x 400 matrix! This works correctly.
+edge_age_pvals_mat <- matrix(nrow = 400, ncol=400)
+edge_age_pvals_mat[lower.tri(edge_age_pvals_mat, diag=FALSE)] <- edgewise_age_nonlin_pvals #take uncorrected p-values for now
+#copy lower triangle to upper triangle
+#edge_age_pvals_mat[upper.tri(edge_age_pvals_mat)] <- t(edge_age_pvals_mat)[upper.tri(edge_age_pvals_mat)]
+
+#Use different pval thresholds and plot parcels that have age-nonlin-sig edges at that threshold
+pvalues=c(0.01,0.001,0.0001)
+for (pvalue in pvalues){
+  indices <- which(edge_age_pvals_mat<pvalue, arr.ind = T) #indices of edges that have age effects  below a pval
+  l <- data.frame(table(indices)) #for each parcel, how many age-significant edges does it have at a given pval thresh--indices gives duplicates!
+  values <- vector(mode = "double", 400)
+  for (i in 1:400){
+    values[as.numeric(as.character(l$indices[i]))] <- l$Freq[i]#replace the indices in values with the num of sig edges from that parcel in the table
+  }
+  num_of_sig_age_edges_lh=as.list(setNames(c(0, values[1:200]), schaefer_atlas_region_names_lh))
+  num_of_sig_age_edges_rh=as.list(setNames(c(0, values[201:400]), schaefer_atlas_region_names_rh))
+  #colormap
+  colFn_diverging = colorRampPalette(c("white","#7502E3"));makecmap_options=list('colFn'=colFn_diverging, 'range'=c(0,10)) #purple="#7502E3"
+  rglactions=list("snapshot_png"=paste0(output_image_directory,"age_nonlin_pvals_", pvalue,"regions.png"))
+  vis.region.values.on.subject(subjects_dir, 'fsaverage6', 'Schaefer2018_400Parcels_7Networks_order',  num_of_sig_age_edges_lh, 
+                               num_of_sig_age_edges_rh, makecmap_options = makecmap_options, "inflated", views="t4", draw_colorbar = T, rgloptions = rgloptions, rglactions = rglactions)
+}
+# Supplementary Figure: Replication in pipeline without GSR --------
 
 pipeline='nogsr_spkreg_fd0.5dvars1.75_drpvls'
 pipeline="nogsr_spkreg_fd1.25dvars2_drpvls"
@@ -685,15 +726,6 @@ edge_age_betas_mat[lower.tri(edge_age_betas_mat, diag=FALSE)] <- edgewise_age_be
 edge_age_betas_mat[upper.tri( edge_age_betas_mat)] <- t(edge_age_betas_mat)[upper.tri( edge_age_betas_mat)]
 
 # Cognition associations
-## Play
-lm_sys3to7<- lm(sys3to7~age_scan+male+fd_mean_avg+avgweight+totalSizet+litnum_freq_play_avg, data=main_unique)
-lm_sys4to7<- lm(sys4to7~age_scan+male+fd_mean_avg+avgweight+totalSizet+litnum_freq_play_avg, data=main_unique)
-summary(lm(litnum_freq_play_avg~age_behav.x+male+ses_composite, data=main_unique));visreg(lm(litnum_freq_play_avg~age_behav.x+male+ses_composite, data=main_unique))
-summary(lm_sys3to7) #Not significant
-summary(lm_sys4to7)
-visreg(lm_sys3to7, "sys3to7", main="Frequency of play",ylab="", xlab="DMN to DAN")
-visreg(lm_sys4to7, "litnum_freq_play_avg", main="DMN to VAN",ylab="", xlab="litnum_freq_play_avg")
-
 ## Reasoning
 
 #Test all 3 systems with Reasoning
@@ -713,8 +745,7 @@ visreg(lm_sys1to3, "sys1to3", main= "Matrix Reasoning (scaled score)", ylab="Sca
 visreg(lm_sys3to7, "sys3to7", main= "Matrix Reasoning (scaled score)", ylab="Scaled score", xlab="DM to DA connectivity")
 visreg(lm_sys4to7)
 
-
-# Replication including longitudinal data ---------------------------------
+# Supplementary Figure: Replication including longitudinal data ---------------------------------
 pipeline='gsr_spkreg_fd0.5dvars1.75_drpvls'
 network_dir=paste0("~/Documents/projects/in_progress/within_between_network_conn_CBPD/data/imageData/",pipeline)
 
@@ -924,26 +955,3 @@ summary(lm_sys4to7);lm.beta(lm_sys4to7)
 visreg(lm_sys1to3, "sys1to3", main= "Matrix Reasoning (scaled score)", ylab="Scaled score", xlab="VIS to DA connectivity")
 visreg(lm_sys3to7, "sys3to7", main= "Matrix Reasoning (scaled score)", ylab="Scaled score", xlab="DM to DA connectivity")
 visreg(lm_sys4to7)
-
-## Play
-lm_sys3to7<- lm(litnum_freq_play_avg~age_scan+male+fd_mean_avg+avgweight+totalSizet+sys3to7+ses_composite, data=main_long_only)
-lm_sys4to7<- lm(litnum_freq_play_avg~age_scan+male+fd_mean_avg+avgweight+totalSizet+sys4to7, data=main_long_only)
-summary(lm(litnum_freq_play_avg~age_behav.x+male+ses_composite, data=main_replicate_unique))
-#visreg(lm(litnum_freq_play_avg~age_behav.x+male+ses_composite, data=main_replicate_unique))
-summary(lm_sys3to7);lm.beta(lm_sys3to7) #Not significant
-summary(lm_sys4to7)
-visreg(lm_sys3to7, "sys3to7", main="Frequency of play",ylab="", xlab="DMN to DAN")
-visreg(lm_sys4to7, "litnum_freq_play_avg", main="DMN to VAN",ylab="", xlab="litnum_freq_play_avg")
-
-# Power analyses ----------------------------------------------------------
-library(pwr)
-library(sensemakr)
-http://web.pdx.edu/~newsomj/mvclass/ho_sample%20size.pdf
-#convert f2 to betas
-
-pwr.f2.test(u = 6,v = 86,sig.level = 0.05,f2 = 0.16)
-
-pwr.r.test(n=92,sig.level = 0.05, r = 0.3)
-
-library(effectsize)
-cohens_f(lm_sys1to3)
