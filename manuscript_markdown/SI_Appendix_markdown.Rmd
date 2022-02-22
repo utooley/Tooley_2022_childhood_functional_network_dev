@@ -1,0 +1,103 @@
+---
+title: SI Appendix
+subtitle: Functional brain network development during childhood
+output:
+  word_document:
+    reference_docx: ref-style-serif.docx
+  pdf_document:
+    toc: yes
+    toc_depth: '6'
+csl: pnas.csl
+bibliography: supplemental_references.bib
+---
+## 1.1 Image acquisition
+Prior to the scanning session, participants were acclimated to the scanning environment with a mock scanner that simulates typical MRI noises. Participants practiced keeping still in the mock scanner by watching a movie that would pause each time they moved their heads more than 1 mm. During the MRI session, a researcher stayed in the scanner room to reassure the child and to gently squeeze their foot if the child moved.  
+
+Imaging was performed at the Center for Advanced Magnetic Resonance Imaging and Spectroscopy (CAMRIS) at the University of Pennsylvania. Scanning was conducted using a Siemens MAGNETOM Prisma 3 T MRI scanner with the vendor’s 32-channel coil. A whole-brain, high-resolution, T1-weighted 3D-encoded multi-echo anatomical image (MEMPRAGE) was acquired (TR = 2530 ms, TEs = 1.69 ms/3.55 ms/5.41 ms/7.27 ms, BW =650 Hz/px, 3x GRAPPA, flip angle = 7◦ , voxel size =1 mm isotropic, matrix size = 256 × 256, 176 sagittal slices, FOV =256 mm, total scan time = 4:38). This sequence used interleaved volumetric navigators to prospectively track and correct for subject head motion [@tisdall_volumetric_2012]. 
+One (n = 43), two (n = 48), or three (n = 1) resting-state fMRI scans were acquired using a T2*-weighted multiband gradient-echo echo-planar imaging (EPI) sequence (multiband acceleration factor = 3, TR = 2000 ms, TE = 30.2 ms, BW = 1860 Hz/px, flip angle = 90◦ , voxel size = 2 mm isotropic, matrix size = 96 × 96, 75 axial slices, FOV = 192 mm, volumes =  150–240, 5 dummy scans).   
+
+Real-time motion monitoring was performed during the resting-state scans with the Framewise Integrated Real-time MRI Monitor (FIRMM) system [@dosenbach_real-time_2017].
+
+## 1.2 Image preprocessing 
+Results included in this manuscript come from preprocessed data, where the preprocessing was performed using Freesurfer [@dale_cortical_1999-1], fMRIPprep 1.2.6-1 (@esteban_fmriprep:_2018; @esteban_nipreps_2019; RRID:SCR_016216), which is based on Nipype 1.1.7 (@gorgolewski_krzysztof_j_2017_581704; @nipype1; RRID:SCR_002502), as well as xcpEngine 1.0 [@ciric_mitigating_2018]. Brain surfaces were reconstructed using recon-all [@dale_cortical_1999-1] prior to other processing, and reconstructed surfaces were used as input to fMRIprep.   
+
+The T1-weighted (T1w) image was corrected for intensity non-uniformity (INU) using N4BiasFieldCorrection (@n4, ANTs 2.2.0), and used as T1w-reference throughout the workflow. The T1w-reference was then skull-stripped using antsBrainExtraction.sh (ANTs 2.2.0), using OASIS as the target template. The brain mask was refined with a custom variation of the method to reconcile ANTs-derived and FreeSurfer-derived segmentations of the cortical gray-matter of Mindboggle (RRID:SCR_002438, @mindboggle). Spatial normalization to the ICBM 152 Nonlinear Asymmetrical template version 2009c (@mni152nlin2009casym, RRID:SCR_008796) was performed through nonlinear registration with antsRegistration (ANTs 2.2.0, RRID:SCR_004757, @avants_optimal_2010), using brain-extracted versions of both T1w volume and template. Brain tissue segmentation of cerebrospinal fluid (CSF), white matter (WM) and gray matter was performed on the brain-extracted T1w using fast (FSL 5.0.9, RRID:SCR_002823, @fsl_fast).    
+
+For each of the resting-state BOLD runs found per subject, the following preprocessing was performed: A reference volume and its skull-stripped version were generated using a custom methodology of fMRIPrep. The BOLD reference was then co-registered to the T1w reference using bbregister (FreeSurfer) which implements boundary-based registration [@greve_accurate_2009]. Co-registration was configured with nine degrees of freedom to account for distortions remaining in the BOLD reference. Head-motion parameters with respect to the BOLD reference (transformation matrices, and six corresponding rotation and translation parameters) were estimated before any spatiotemporal filtering using mcflirt (FSL 5.0.9, @jenkinson_improved_2002). BOLD runs were slice-time corrected using 3dTshift from AFNI 20160207 (@afni, RRID:SCR_005927). The BOLD time-series were resampled onto MNI152NLin2009cAsym standard space by applying a single, composite transform, generating a preprocessed BOLD run in MNI152NLin2009cAsym space.   
+
+Several confounding time-series were calculated based on the preprocessed BOLD: framewise displacement (FD), DVARS and three region-wise global signals (CSF, WM, and the whole-brain). FD and DVARS were calculated for each functional run, both using their implementations in Nipype (following the definitions by @power_fd_dvars). The head-motion estimates calculated in the correction step were also placed within the corresponding confounds file.   
+
+All resamplings can be performed with a single interpolation step by composing all the pertinent transformations (i.e. head-motion transform matrices and co-registrations to anatomical and template spaces). Gridded (volumetric) resamplings were performed using antsApplyTransforms (ANTs), configured with Lanczos interpolation to minimize the smoothing effects of other kernels [@lanczos].  
+
+Further preprocessing was performed using a confound regression procedure that has been optimized to reduce the influence of participant motion [@ciric_benchmarking_2017; @parkes_evaluation_2018; @satterthwaite_heterogeneous_2013]; preprocessing was implemented in XCPEngine 1.0, a multi-modal toolkit that deploys processing instruments from frequently used software libraries, including FSL [@jenkinson_fsl_2012] and AFNI [@cox_afni:_1996]. Further documentation is available at https://xcpengine.readthedocs.io and https://github.com/PennBBL/xcpEngine. Functional timeseries were band-pass filtered to retain frequencies between 0.01 Hz and 0.08 Hz. Data were demeaned, and linear and quadratic trends were removed. Confound regression was performed using a 36-parameter model; confounds included mean signal from the whole brain, WM, and CSF compartments, 6 motion parameters as well as their temporal derivatives, quadratic terms, and the temporal derivatives of the quadratic terms [@satterthwaite_improved_2013]. Prior to confound regression, all confound parameters were band-pass filtered in a fashion identical to that applied to the original timeseries data, ensuring comparability of the signals in frequency content [@hallquist_nuisance_2013]. A spike regressor was added for each frame exceeding FD = 0.5 mm or standardized DVARS = 1.75.   
+
+## 1.3 Image quality and exclusion criteria
+The quality of imaging data was assessed using fMRIPrep’s visual reports and MRIQC 0.14.2 [@esteban_mriqc:_2017]. Functional images were visually inspected for whole-brain field of view coverage, signal blurring or artifacts, and proper alignment to the anatomical image. Participants were excluded for: unusable anatomical image (n = 1), artifact in functional data (due to hair glitter, $n = 1$), incorrect registration at the scanner ($n = 1$), average FD greater than 1 mm ($n = 14$), more than 30% of resting-state frames exceeding FD > 0.5 mm ($n = 8$, @power_spurious_2012-1). For participants with more than one usable resting-state run, FD was averaged across runs, weighted by run length. All analyses controlled for average FD and total number of resting-state frames. 
+
+## 1.4 Functional network construction
+We used residual mean BOLD timeseries after preprocessing and nuisance regression, extracted from a 400-region cortical parcellation, and represented the functional connectivity matrix as a graph or network [@bassett_nature_2018]. Regions were represented by network nodes, and in which the functional connectivity between region $i$ and region $j$ was represented by the network edge between node $i$ and node $j$. We used this encoding of the data as a network to produce an undirected, signed, and weighted adjacency matrix $A$.  
+
+## 1.5 Functional network measures: System segregation
+System segregation quantifies the difference in mean within-system connectivity and mean between-system connectivity as a proportion of within-system connectivity. Previous work has linked this measure to aging-related changes in brain networks and poorer cognitive ability across age [@chan_decreased_2014]. In these analyses, we define system segregation as in [@chan_decreased_2014], as: 
+$$
+\frac{\bar a_{within}- \bar a_{between}}{\bar a_{within}}
+$$
+Where $\bar a_{within}$ is the mean edge weight between nodes within the same system and $\bar a_{between}$ is the mean edge weight between nodes of one system to all nodes in other systems. We assigned nodes to systems based on a 7-system partition [@yeo_organization_2011]. Freely available MATLAB code from https://github.com/mychan24/system_matrix_tools was used to calculate system segregation.
+
+## 1.6 Functional network measures: Modularity quality index
+Statistics that quantify the modular structure of a network assess the extent to which a network’s nodes can be subdivided into groups or modules characterized by strong, dense intramodular connectivity and weak, sparse intermodular connectivity. We considered the most commonly studied mesoscale organization—assortative community structure—that is commonly assessed by maximizing a modularity quality function [@fortunato_community_2010; @porter_communities_2009]. Our approach is built on the modularity quality function originally defined by Newman [@newman_modularity_2006] and subsequently extended to weighted and signed networks by various groups.   
+
+Specifically, we follow Rubinov and Sporns (2011) by first letting the weight of a positive connection between nodes $i$ and $j$ be given by $a^+_{ij}$ , the weight of a negative connection between nodes $i$ and $j$ be given by ${a^−}_{ij}$ , and the strength of a node $i$, $s^\pm_i = \sum_j a^{\pm_{ij}}$, be given by the sum of the positive or negative $j$ connection weights of $i$. We denote the chance expected within-module connection weights as $e^+_{ij}$ for positive weights and $e^-_{ij}$ for negative weights, where $e^\pm_{ij} = \frac {s^\pm_i s^\pm_j}{v^\pm}$. We let the total weight $v^\pm = \sum_{ij} a^\pm_{ij}$ be the sum of all positive or negative connection weights in the network. Then the asymmetric generalization of the modularity quality index is given by:
+$$
+Q^* = \frac{1}{v^+} \sum_{ij}(a^+_{ij} - e^+_{ij}) \delta_{M_i M_j} - \frac{1}{v^+ + v^-} \sum_{ij}(a^-_{ij} - e^-_{ij}) \delta_{M_i M_j}~
+$$
+where $M_i$ is the community to which node $i$ is assigned, and $M_j$ is the community to which node $j$ is assigned. We use a Louvain-like locally greedy algorithm as a heuristic to maximize this modularity quality index subject to a partition M of nodes into communities.
+
+## 1.7 Functional network measures: Clustering coefficient.
+
+To assess local network segregation, we used a commonly studied graph measure of local connectivity—the clustering coefficient— that is commonly interpreted as reflecting the capacity of the system for processing within the immediate neighborhood of a given network node [@achard_resilient_2006; @bartolomei_disturbed_2006; @bassett_small-world_2006; @xu_network_2016]. We specifically used a formulation that was recently generalized to signed weighted networks [@costantini_generalization_2014; @zhang_general_2005]. This version is sensitive to nonredundancy in path information based on edge sign as well as edge weight and importantly distinguishes between positive triangles and negative triangles, which have distinct meanings in networks constructed from correlation matrices.  
+
+Let the functional connectivity network of a single participant be represented as the graph $G = (V, E)$, where $V$ and $E$ are the vertex and edge sets, respectively. Let $a_{ij}$ be the weight associated with the edge $(i,j) \in V$, and define the weighted adjacency matrix of $G$ as $A = [a_{ij}]$. The clustering coefficient of node $i$ with neighbors $j$ and $q$ is given by
+$$
+C_i =  \frac{\sum_{jq} (a_{ji} a_{iq} a_{jq}) }
+{\sum_{j \neq q} | a_{ji} a_{iq} |}~~
+$$
+The clustering coefficient of the entire network was calculated as the average of the clustering coefficient across all nodes as follows:
+$$
+C = \frac{1}{n} \sum_{i \in N} C_i~~
+$$
+In this way, we obtained estimates of the regional and global clustering coefficient for each subject in the sample.
+
+## 1.8 Functional network measures: Participation coefficient.
+The participation coefficient is a measure of network integration that quantifies the diversity of a node’s connections across communities, and has been linked in older children and adolescents to developmental changes in network segregation [@baum_modular_2017; @marek_contribution_2015]. In these analyses, we define the participation coefficient $P_i$ of a node $i$ as:
+$$
+P_i = 1 - \sum_{k \in K} (\frac{a_{ik}}{s_i})
+$$
+where $k$ is a system in a set $K$ of systems, in this case defined by the a priori mapping of nodes to intrinsic functional systems [@yeo_organization_2011], $a_{ik}$ is the positive (negative) weight of edges between node $i$ and nodes in system $k$, and $s_i$ is the positive (negative) strength of node i. The participation coefficient was calculated separately on negative and positive weights [@rubinov_complex_2010].  
+
+As in our analyses of local segregation, the participation coefficient of the entire network was calculated as the average positive (negative) participation coefficient across all nodes as follows:
+$$
+P = \frac{1}{n} \sum_{i \in N} P_i
+$$
+The average positive and negative participation coefficient for each participant’s network were averaged to obtain a global measure of network integration.
+
+## 1.9 Functional network measures: Nodal strength.
+Nodal strength is a measure of centrality that captures global integration across the brain, summarizing the overall strength of positive and negative edges to and from a node. The strength of a node is given by the sum of all the positive and negative $j$ connection weights of $i$: 
+$$
+s_i = \sum_j a_{ij}
+$$
+
+\newpage
+## Figure S1. Replication in an alternate parcellation
+
+![**Figure S1. Replication in an alternate parcellation** a. Whole-brain measures of functional network segregation (system segregation, modularity, and the clustering coefficient) are positively associated with age. The participation coefficient is a measure of functional network integration and is negatively associated with age. b. Age effects on between-system connectivity. c. Number of edges from each parcel showing a significant positive age association, thresholded at p < 0.001. d. Number of edges from each parcel showing a significant negative age association, thresholded at p < 0.001. d. System-level associations with reasoning. Reasoning is associated with visual to dorsal attention system connectivity and default to dorsal attention system connectivity.](ms_figures/new_figures/supp_fig_replicate_schaefer-01.png)
+
+## Fig S2. Parcel level age effects: Multiple significance thresholds
+
+![**Fig S2. Parcel-level age effects: Multiple significance thresholds.** a. Number of edges from each parcel showing a significant positive age association, thresholded at p < 0.01 and p < 0.0001. b. Number of edges from each parcel showing a significant negative age association, thresholded at p < 0.01 and p < 0.0001. c. We did not observe significant nonlinear relationships between age and whole-brain or system-level measures of network structure. 7.9% of edges showed significant non-linear effects of age, as compared to 12.5% of edges that showed only linear effects. Number of edges from each parcel showing a significant non-linear effect of age association, thresholded at p < 0.001.](ms_figures/new_figures/supp_fig_3_thresholds-01.png) 
+
+## Fig S3. Parcel level age effects: Non-linear effects
+
+![**Fig S3. Parcel-level age effects: Non-linear effects.** a. We did not observe significant nonlinear relationships between age and whole-brain or system-level measures of network structure. 7.9% of edges showed significant non-linear effects of age, as compared to 12.5% of edges that showed only linear effects. Number of edges from each parcel showing a significant non-linear effect of age association, thresholded at p < 0.001.](ms_figures/new_figures/supp_fig_4_nonlinear-01.png)
+
+## Bibliography
