@@ -1,0 +1,24 @@
+---
+title: Additional Figures
+subtitle: Functional brain network development during childhood
+output:
+  word_document:
+    reference_docx: ref-style-serif.docx
+  pdf_document:
+    toc: yes
+    toc_depth: '6'
+csl: the-journal-of-neuroscience.csl
+bibliography: supplemental_references.bib
+---
+
+## Figure S1. Replication in an alternate parcellation
+
+![**Figure S1. Replication in an alternate parcellation** a. Whole-brain measures of functional network segregation (system segregation, modularity, and the clustering coefficient) are positively associated with age. The participation coefficient is a measure of functional network integration and is negatively associated with age. b. Age effects on between-system connectivity. c. Number of edges from each parcel showing a significant positive age association, thresholded at $p_{unc} < 0.001$. d. Number of edges from each parcel showing a significant negative age association, thresholded at $p_{unc} < 0.001$. d. System-level associations with reasoning. Reasoning is associated with visual to dorsal attention system connectivity and default to dorsal attention system connectivity.](ms_figures/new_figures/supp_fig_replicate_schaefer-01.png)
+
+## Fig S2. Parcel level age effects: Multiple significance thresholds
+
+![**Fig S2. Parcel-level age effects: Multiple significance thresholds.** a. Number of edges from each parcel showing a significant positive age association, thresholded at $p < 0.01$ and $p < 0.0001$. b. Number of edges from each parcel showing a significant negative age association, thresholded at $p < 0.01$ and $p < 0.0001$. c. We did not observe significant nonlinear relationships between age and whole-brain or system-level measures of network structure. 7.9% of edges showed significant non-linear effects of age, as compared to 12.5% of edges that showed only linear effects. Number of edges from each parcel showing a significant non-linear effect of age association, thresholded at $p < 0.001$.](ms_figures/new_figures/supp_fig_3_thresholds-01.png) 
+
+## Fig S3. Parcel level age effects: Non-linear effects
+
+![**Fig S3. Parcel-level age effects: Non-linear effects.** a. We did not observe significant nonlinear relationships between age and whole-brain or system-level measures of network structure. 7.9% of edges showed significant non-linear effects of age, as compared to 12.5% of edges that showed only linear effects. Number of edges from each parcel showing a significant non-linear effect of age association, thresholded at $p_{unc} < 0.001$.](ms_figures/new_figures/supp_fig_4_nonlinear-01.png)
